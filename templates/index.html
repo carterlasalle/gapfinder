@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trading Gaps</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        select, input, button {
+            margin-bottom: 10px;
+            padding: 5px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            text-align: left;
+            padding: 10px;
+        }
+        th {
+            background-color: #f2f2f2;
+            cursor: pointer;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <select id="url_select" onchange="refreshData()">
+        <option value="204">Hunter</option>
+        <option value="200">Shadow</option>
+        <option value="202">Anchor</option>
+    </select>
+    <input type="checkbox" id="show_all" onchange="refreshData()"> Show All
+    <input type="checkbox" id="max_buy_filter" onchange="applySearch()"> Max Buy > Current Price
+    <button onclick="refreshData()">Refresh</button>
+    <input type="text" id="search" placeholder="Search" oninput="applySearch()">
+    <table id="data_table">
+        <!-- Data will be populated here -->
+    </table>
+
+    <script>
+        let currentData = [];
+        let sortOrder = {column: 5, ascending: false}; // Default sort by Gap
+
+        function populateTable(data) {
+            currentData = data;
+            const arrow = sortOrder.ascending ? '↓' : '↑';
+            const table = document.getElementById('data_table');
+            table.innerHTML = `<tr>
+                <th onclick="sortTable(1)">Player</th>
+                <th onclick="sortTable(2)">Max Buy ${sortOrder.column === 2 ? arrow : ''}</th>
+                <th onclick="sortTable(3)">Min Sell ${sortOrder.column === 3 ? arrow : ''}</th>
+                <th onclick="sortTable(4)">Current Price ${sortOrder.column === 4 ? arrow : ''}</th>
+                <th onclick="sortTable(5)">Gap ${sortOrder.column === 5 ? arrow : ''}</th>
+            </tr>`;
+            applySearch();
+        }
+
+        function applySearch() {
+            const table = document.getElementById('data_table');
+            const searchValue = document.getElementById('search').value.toLowerCase();
+            const maxBuyFilter = document.getElementById('max_buy_filter').checked;
+            let filteredData = currentData;
+
+            if (maxBuyFilter) {
+                filteredData = filteredData.filter(row => row[1] > row[3]);
+            }
+
+            filteredData = filteredData.filter(row => row.some(cell => cell.toString().toLowerCase().includes(searchValue)));
+
+            // Keep the header and append the rows
+            table.innerHTML = table.querySelector('tr').outerHTML;
+            filteredData.forEach(row => {
+                const tr = document.createElement('tr');
+                row.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            });
+        }
+
+        function sortTable(columnIndex) {
+            currentData.sort((a, b) => {
+                const valA = a[columnIndex - 1];
+                const valB = b[columnIndex - 1];
+                let comparison = 0;
+                if (valA > valB) {
+                    comparison = 1;
+                } else if (valA < valB) {
+                    comparison = -1;
+                }
+                return sortOrder.ascending ? comparison : -comparison;
+            });
+            sortOrder = {column: columnIndex, ascending: !sortOrder.ascending};
+            populateTable(currentData);
+        }
+
+        function refreshData() {
+            const article_number = document.getElementById('url_select').value;
+            const show_all = document.getElementById('show_all').checked;
+            const formData = new URLSearchParams();
+            formData.append('article_number', article_number);
+            formData.append('show_all', show_all);
+            fetch('/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                populateTable(data.data);
+            });
+        }
+
+        // Initialize with default sorting
+        window.onload = () => {
+            refreshData();
+        };
+    </script>
+</body>
+</html>
