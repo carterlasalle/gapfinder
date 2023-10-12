@@ -1,0 +1,11 @@
+{
+    "name": "your_project",
+    "version": "1.0.0",
+    "scripts": {
+        "vercel-dev": "vercel dev",
+        "start": "FLASK_APP=api/index.py FLASK_ENV=development flask run"
+    },
+    "dependencies": {
+        "@vercel/python": "^1.2.1"
+    }
+}

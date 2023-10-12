@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import requests
 from bs4 import BeautifulSoup
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 
 def fetch_data(article_number, show_all):
     url = f'https://hayyatapps.com/API/v273__new/Data/?article={article_number}'
@@ -33,5 +33,8 @@ def refresh():
     sorted_gaps = fetch_data(article_number, show_all)
     return jsonify({'data': sorted_gaps})
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    from werkzeug.serving import run_simple
+    run_simple("localhost", 4000, app)
+else:
+    from api import app as application
