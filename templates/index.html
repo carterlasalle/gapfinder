@@ -31,22 +31,44 @@
     </style>
 </head>
 <body>
-    <select id="url_select" onchange="refreshData()">
-        <option value="204">Hunter</option>
-        <option value="200">Shadow</option>
-        <option value="202">Anchor</option>
-    </select>
-    <input type="checkbox" id="show_all" onchange="refreshData()"> Show All
-    <input type="checkbox" id="max_buy_filter" onchange="applySearch()"> Max Buy > Current Price
-    <button onclick="refreshData()">Refresh</button>
-    <input type="text" id="search" placeholder="Search" oninput="applySearch()">
+    <div id="loading" style="display: none;">Loading...</div>
+    <div style="margin-bottom: 20px;">
+        <select id="url_select" onchange="refreshData()" style="padding: 10px;">
+            <option value="204">Hunter</option>
+            <option value="200">Shadow</option>
+            <option value="202">Anchor</option>
+        </select>
+        <input type="checkbox" id="show_all" onchange="refreshData()"> Show All
+        <input type="checkbox" id="use_avg" onchange="refreshData()"> Use Avg Price
+        <input type="checkbox" id="max_buy_filter" onchange="applySearch()"> Max Buy > Current Price
+        <button onclick="refreshData()" style="padding: 10px;">Refresh</button>
+        <button onclick="setGapMode('min_sell')">Gap: Min Sell - Current Price</button>
+        <button onclick="setGapMode('max_buy')">Gap: Max Buy - Current Price</button>
+        <button onclick="setGapMode('max_min_sell')">Gap: Max Buy - Min Sell</button>
+    </div>
+    <input type="text" id="search" placeholder="Search" oninput="applySearch()" style="width: 100%; padding: 10px;">
+    <div id="time_since_last_refresh"></div>
     <table id="data_table">
         <!-- Data will be populated here -->
     </table>
-
     <script>
         let currentData = [];
-        let sortOrder = {column: 5, ascending: false}; // Default sort by Gap
+        let sortOrder = {column: 6, ascending: false};
+        let lastRefreshTime = new Date();
+        let gapMode = 'min_sell';
+
+        function setGapMode(mode) {
+            gapMode = mode;
+            refreshData();
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
 
         function populateTable(data) {
             currentData = data;
@@ -54,10 +76,11 @@
             const table = document.getElementById('data_table');
             table.innerHTML = `<tr>
                 <th onclick="sortTable(1)">Player</th>
-                <th onclick="sortTable(2)">Max Buy ${sortOrder.column === 2 ? arrow : ''}</th>
-                <th onclick="sortTable(3)">Min Sell ${sortOrder.column === 3 ? arrow : ''}</th>
-                <th onclick="sortTable(4)">Current Price ${sortOrder.column === 4 ? arrow : ''}</th>
-                <th onclick="sortTable(5)">Gap ${sortOrder.column === 5 ? arrow : ''}</th>
+                <th onclick="sortTable(2)">Max Buy</th>
+                <th onclick="sortTable(3)">Min Sell</th>
+                <th onclick="sortTable(4)">Current Price</th>
+                <th>Avg Price</th>
+                <th onclick="sortTable(6)">Gap ${sortOrder.column === 6 ? arrow : ''}</th>
             </tr>`;
             applySearch();
         }
@@ -74,7 +97,6 @@
 
             filteredData = filteredData.filter(row => row.some(cell => cell.toString().toLowerCase().includes(searchValue)));
 
-            // Keep the header and append the rows
             table.innerHTML = table.querySelector('tr').outerHTML;
             filteredData.forEach(row => {
                 const tr = document.createElement('tr');
@@ -104,11 +126,15 @@
         }
 
         function refreshData() {
+            showLoading();
             const article_number = document.getElementById('url_select').value;
             const show_all = document.getElementById('show_all').checked;
+            const use_avg = document.getElementById('use_avg').checked;
             const formData = new URLSearchParams();
             formData.append('article_number', article_number);
             formData.append('show_all', show_all);
+            formData.append('gap_mode', gapMode);
+            formData.append('use_avg', use_avg);
             fetch('/refresh', {
                 method: 'POST',
                 headers: {
@@ -118,13 +144,28 @@
             })
             .then(response => response.json())
             .then(data => {
-                populateTable(data.data);
+                if (data.error) {
+                    alert(`Error: ${data.error}`);
+                } else {
+                    populateTable(data.data);
+                    lastRefreshTime = new Date();
+                }
+                hideLoading();
+            })
+            .catch(error => {
+                alert(`An error occurred: ${error}`);
+                hideLoading();
             });
         }
 
-        // Initialize with default sorting
         window.onload = () => {
             refreshData();
+            setInterval(refreshData, 5 * 60 * 1000);
+            setInterval(() => {
+                const now = new Date();
+                const diffInSeconds = Math.floor((now - lastRefreshTime) / 1000);
+                document.getElementById('time_since_last_refresh').textContent = `Last refreshed: ${diffInSeconds} seconds ago`;
+            }, 1000);
         };
     </script>
 </body>
