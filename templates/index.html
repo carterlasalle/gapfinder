@@ -28,6 +28,13 @@
         tr:nth-child(even) {
             background-color: #f2f2f2;
         }
+        .price-filter {
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .price-filter input {
+            width: 80px;
+        }
     </style>
 </head>
 <body>
@@ -45,6 +52,18 @@
         <button onclick="setGapMode('min_sell')">Gap: Min Sell - Current Price</button>
         <button onclick="setGapMode('max_buy')">Gap: Max Buy - Current Price</button>
         <button onclick="setGapMode('max_min_sell')">Gap: Max Buy - Min Sell</button>
+    </div>
+    <div>
+        <div class="price-filter">
+            Current Price: 
+            <input type="number" id="current_price_min" placeholder="Min" oninput="applySearch()">
+            <input type="number" id="current_price_max" placeholder="Max" oninput="applySearch()">
+        </div>
+        <div class="price-filter">
+            Avg Price: 
+            <input type="number" id="avg_price_min" placeholder="Min" oninput="applySearch()">
+            <input type="number" id="avg_price_max" placeholder="Max" oninput="applySearch()">
+        </div>
     </div>
     <input type="text" id="search" placeholder="Search" oninput="applySearch()" style="width: 100%; padding: 10px;">
     <div id="time_since_last_refresh"></div>
@@ -79,7 +98,7 @@
                 <th onclick="sortTable(2)">Max Buy</th>
                 <th onclick="sortTable(3)">Min Sell</th>
                 <th onclick="sortTable(4)">Current Price</th>
-                <th>Avg Price</th>
+                <th onclick="sortTable(5)">Avg Price</th>
                 <th onclick="sortTable(6)">Gap ${sortOrder.column === 6 ? arrow : ''}</th>
             </tr>`;
             applySearch();
@@ -89,20 +108,28 @@
             const table = document.getElementById('data_table');
             const searchValue = document.getElementById('search').value.toLowerCase();
             const maxBuyFilter = document.getElementById('max_buy_filter').checked;
-            let filteredData = currentData;
+            const currentPriceMin = parseFloat(document.getElementById('current_price_min').value) || -Infinity;
+            const currentPriceMax = parseFloat(document.getElementById('current_price_max').value) || Infinity;
+            const avgPriceMin = parseFloat(document.getElementById('avg_price_min').value) || -Infinity;
+            const avgPriceMax = parseFloat(document.getElementById('avg_price_max').value) || Infinity;
 
-            if (maxBuyFilter) {
-                filteredData = filteredData.filter(row => row[1] > row[3]);
-            }
-
-            filteredData = filteredData.filter(row => row.some(cell => cell.toString().toLowerCase().includes(searchValue)));
+            let filteredData = currentData.filter(row => {
+                const currentPrice = row[3];
+                const avgPrice = row[4];
+                return (
+                    row.some(cell => cell.toString().toLowerCase().includes(searchValue)) &&
+                    (!maxBuyFilter || row[1] > row[3]) &&
+                    currentPrice >= currentPriceMin && currentPrice <= currentPriceMax &&
+                    (avgPrice === null || (avgPrice >= avgPriceMin && avgPrice <= avgPriceMax))
+                );
+            });
 
             table.innerHTML = table.querySelector('tr').outerHTML;
             filteredData.forEach(row => {
                 const tr = document.createElement('tr');
                 row.forEach(cell => {
                     const td = document.createElement('td');
-                    td.textContent = cell;
+                    td.textContent = cell ?? 'N/A';
                     tr.appendChild(td);
                 });
                 table.appendChild(tr);
@@ -114,7 +141,13 @@
                 const valA = a[columnIndex - 1];
                 const valB = b[columnIndex - 1];
                 let comparison = 0;
-                if (valA > valB) {
+                if (valA === null && valB === null) {
+                    comparison = 0;
+                } else if (valA === null) {
+                    comparison = 1;
+                } else if (valB === null) {
+                    comparison = -1;
+                } else if (valA > valB) {
                     comparison = 1;
                 } else if (valA < valB) {
                     comparison = -1;
