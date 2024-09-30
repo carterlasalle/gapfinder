@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Trading Gaps</title>
+    <title>FIFA/FUT Trading Gaps</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -35,6 +35,14 @@
         .price-filter input {
             width: 80px;
         }
+        .favorite {
+            color: gold;
+            cursor: pointer;
+        }
+        #last_change_times {
+            margin-top: 10px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -65,8 +73,14 @@
             <input type="number" id="avg_price_max" placeholder="Max" oninput="applySearch()">
         </div>
     </div>
+    <div>
+        <label for="tax_rate">EA Tax Rate (%): </label>
+        <input type="number" id="tax_rate" value="5" min="0" max="100" step="0.1" onchange="applySearch()">
+    </div>
+    <div id="favorites"></div>
     <input type="text" id="search" placeholder="Search" oninput="applySearch()" style="width: 100%; padding: 10px;">
     <div id="time_since_last_refresh"></div>
+    <div id="last_change_times"></div>
     <table id="data_table">
         <!-- Data will be populated here -->
     </table>
@@ -75,6 +89,17 @@
         let sortOrder = {column: 6, ascending: false};
         let lastRefreshTime = new Date();
         let gapMode = 'min_sell';
+        let favorites = new Set();
+        let lastChangeTimes = {
+            '204': null, // Hunter
+            '200': null, // Shadow
+            '202': null  // Anchor
+        };
+        let previousData = {
+            '204': null,
+            '200': null,
+            '202': null
+        };
 
         function setGapMode(mode) {
             gapMode = mode;
@@ -89,6 +114,34 @@
             document.getElementById('loading').style.display = 'none';
         }
 
+        function calculateProfit(buyPrice, sellPrice, taxRate) {
+            const revenue = sellPrice * (1 - taxRate / 100);
+            return Math.floor(revenue - buyPrice);
+        }
+
+        function toggleFavorite(playerName) {
+            if (favorites.has(playerName)) {
+                favorites.delete(playerName);
+            } else {
+                favorites.add(playerName);
+            }
+            localStorage.setItem('favorites', JSON.stringify(Array.from(favorites)));
+            applySearch();
+            updateFavoritesList();
+        }
+
+        function updateFavoritesList() {
+            const favoritesDiv = document.getElementById('favorites');
+            favoritesDiv.innerHTML = '<h3>Favorites:</h3>';
+            favorites.forEach(player => {
+                const playerSpan = document.createElement('span');
+                playerSpan.textContent = player + ' ';
+                playerSpan.onclick = () => toggleFavorite(player);
+                playerSpan.style.cursor = 'pointer';
+                favoritesDiv.appendChild(playerSpan);
+            });
+        }
+
         function populateTable(data) {
             currentData = data;
             const arrow = sortOrder.ascending ? '↓' : '↑';
@@ -100,6 +153,8 @@
                 <th onclick="sortTable(4)">Current Price</th>
                 <th onclick="sortTable(5)">Avg Price</th>
                 <th onclick="sortTable(6)">Gap ${sortOrder.column === 6 ? arrow : ''}</th>
+                <th>Potential Profit</th>
+                <th>Favorite</th>
             </tr>`;
             applySearch();
         }
@@ -112,6 +167,7 @@
             const currentPriceMax = parseFloat(document.getElementById('current_price_max').value) || Infinity;
             const avgPriceMin = parseFloat(document.getElementById('avg_price_min').value) || -Infinity;
             const avgPriceMax = parseFloat(document.getElementById('avg_price_max').value) || Infinity;
+            const taxRate = parseFloat(document.getElementById('tax_rate').value) || 5;
 
             let filteredData = currentData.filter(row => {
                 const currentPrice = row[3];
@@ -132,6 +188,22 @@
                     td.textContent = cell ?? 'N/A';
                     tr.appendChild(td);
                 });
+                
+                // Add potential profit column
+                const profitTd = document.createElement('td');
+                const profit = calculateProfit(row[3], row[2], taxRate);
+                profitTd.textContent = profit;
+                tr.appendChild(profitTd);
+
+                // Add favorite column
+                const favoriteTd = document.createElement('td');
+                const favoriteSpan = document.createElement('span');
+                favoriteSpan.textContent = favorites.has(row[0]) ? '★' : '☆';
+                favoriteSpan.className = 'favorite';
+                favoriteSpan.onclick = () => toggleFavorite(row[0]);
+                favoriteTd.appendChild(favoriteSpan);
+                tr.appendChild(favoriteTd);
+
                 table.appendChild(tr);
             });
         }
@@ -158,6 +230,30 @@
             populateTable(currentData);
         }
 
+        function updateLastChangeTime(articleNumber, newData) {
+            if (JSON.stringify(newData) !== JSON.stringify(previousData[articleNumber])) {
+                lastChangeTimes[articleNumber] = new Date();
+                previousData[articleNumber] = newData;
+            }
+            updateLastChangeTimesDisplay();
+        }
+
+        function updateLastChangeTimesDisplay() {
+            const lastChangeTimesDiv = document.getElementById('last_change_times');
+            const now = new Date();
+            let html = '<strong>Time since last data change:</strong><br>';
+            for (const [articleNumber, lastChangeTime] of Object.entries(lastChangeTimes)) {
+                const chemStyle = articleNumber === '204' ? 'Hunter' : articleNumber === '200' ? 'Shadow' : 'Anchor';
+                if (lastChangeTime) {
+                    const diffInSeconds = Math.floor((now - lastChangeTime) / 1000);
+                    html += `${chemStyle}: ${diffInSeconds} seconds ago<br>`;
+                } else {
+                    html += `${chemStyle}: No changes recorded yet<br>`;
+                }
+            }
+            lastChangeTimesDiv.innerHTML = html;
+        }
+
         function refreshData() {
             showLoading();
             const article_number = document.getElementById('url_select').value;
@@ -180,6 +276,7 @@
                 if (data.error) {
                     alert(`Error: ${data.error}`);
                 } else {
+                    updateLastChangeTime(article_number, data.data);
                     populateTable(data.data);
                     lastRefreshTime = new Date();
                 }
@@ -192,12 +289,15 @@
         }
 
         window.onload = () => {
+            favorites = new Set(JSON.parse(localStorage.getItem('favorites') || '[]'));
+            updateFavoritesList();
             refreshData();
             setInterval(refreshData, 5 * 60 * 1000);
             setInterval(() => {
                 const now = new Date();
                 const diffInSeconds = Math.floor((now - lastRefreshTime) / 1000);
                 document.getElementById('time_since_last_refresh').textContent = `Last refreshed: ${diffInSeconds} seconds ago`;
+                updateLastChangeTimesDisplay();
             }, 1000);
         };
     </script>
