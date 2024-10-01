@@ -1,3 +1,10 @@
 flask
 requests
 bs4
+flask-sqlalchemy
+flask-login
+flask-bcrypt
+gunicorn
+psycopg2-binary
+flask-caching
+flask-migrate
