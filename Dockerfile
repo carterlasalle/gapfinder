@@ -21,5 +21,5 @@ ENV FLASK_APP=gapfinder.py
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV FLASK_RUN_PORT=5001
 
-# Initialize the database and start the application
-CMD flask db init && flask db migrate -m "Initial migration" && python init_db.py && flask run
+# Run the application
+CMD ["sh", "-c", "flask db upgrade && python init_db.py && flask run"]

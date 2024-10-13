@@ -9,7 +9,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: sh -c "flask db init && flask db migrate -m 'Initial migration' && python init_db.py && flask run"
   db:
     image: postgres:13
     environment:

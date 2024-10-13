@@ -15,47 +15,53 @@ from api import api_bp
 from werkzeug.security import generate_password_hash
 from flask_migrate import Migrate
 
-app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+def create_app():
+    app = Flask(__name__)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-# Configuration
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fallback_secret_key')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///gapfinder.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # Configuration
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fallback_secret_key')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///gapfinder.db')
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Initialize extensions
-db.init_app(app)
-migrate.init_app(app, db)
-bcrypt = Bcrypt(app)
-login_manager.init_app(app)
-cache.init_app(app)
+    # Initialize extensions
+    db.init_app(app)
+    migrate.init_app(app, db)
+    bcrypt = Bcrypt(app)
+    login_manager.init_app(app)
+    cache.init_app(app)
 
-# Create admin user if it doesn't exist
-with app.app_context():
-    if not User.query.filter_by(username='admin').first():
-        admin_user = User(username='admin', password_hash=generate_password_hash('admin123'))
-        db.session.add(admin_user)
-        db.session.commit()
+    # Register blueprints
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(api_bp)
 
-# Register blueprints
-app.register_blueprint(auth_bp)
-app.register_blueprint(api_bp)
+    @app.route('/')
+    @login_required
+    def index():
+        return render_template('index.html')
 
-# Set up logging
-if not app.debug:
-    file_handler = RotatingFileHandler('gapfinder.log', maxBytes=10240, backupCount=10)
-    file_handler.setFormatter(logging.Formatter(
-        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
-    ))
-    file_handler.setLevel(logging.INFO)
-    app.logger.addHandler(file_handler)
-    app.logger.setLevel(logging.INFO)
-    app.logger.info('Gapfinder startup')
+    @app.route('/test_db')
+    def test_db():
+        try:
+            users = User.query.all()
+            return f"Database connection successful. Number of users: {len(users)}"
+        except Exception as e:
+            return f"Database connection failed: {str(e)}"
 
-@app.route('/')
-@login_required
-def index():
-    return render_template('index.html')
+    # Logging configuration
+    if not app.debug:
+        file_handler = RotatingFileHandler('gapfinder.log', maxBytes=10240, backupCount=10)
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        ))
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
+        app.logger.setLevel(logging.INFO)
+        app.logger.info('Gapfinder startup')
+
+    return app
+
+app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(host='0.0.0.0', port=5001)
