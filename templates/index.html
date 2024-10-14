@@ -144,34 +144,44 @@
             return Math.floor(revenue - buyPrice);
         }
 
-        function toggleFavorite(playerName, section) {
-            const existingFavorite = favorites.find(f => f.player_name === playerName && f.section === section);
-            if (existingFavorite) {
-                return; // Do nothing if already favorited
+        async function toggleFavorite(playerName, section) {
+            try {
+                const response = await fetch('/favorites', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ player_name: playerName, section: section }),
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to toggle favorite');
+                }
+                // Handle successful response
+                console.log('Favorite added successfully:', data);
+                // Update UI to reflect the new favorite
+            } catch (error) {
+                console.error('Error toggling favorite:', error);
+                // Handle error (e.g., show an error message to the user)
             }
-            
-            fetch('/favorites', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ player_name: playerName, section: section })
-            })
-            .then(response => response.json())
-            .then(data => {
-                favorites.push(data);
-                updateFavoritesList();
-            })
-            .catch(error => console.error('Error:', error));
         }
 
-        function deleteFavorite(id) {
-            fetch(`/favorites?id=${id}`, { method: 'DELETE' })
-            .then(() => {
-                favorites = favorites.filter(f => f.id !== id);
-                updateFavoritesList();
-            })
-            .catch(error => console.error('Error:', error));
+        async function deleteFavorite(favoriteId) {
+            try {
+                const response = await fetch(`/favorites?id=${favoriteId}`, {
+                    method: 'DELETE',
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to delete favorite');
+                }
+                // Handle successful response
+                console.log('Favorite deleted successfully');
+                // Update UI to remove the deleted favorite
+            } catch (error) {
+                console.error('Error deleting favorite:', error);
+                // Handle error (e.g., show an error message to the user)
+            }
         }
 
         function updateFavoritesList() {
