@@ -354,6 +354,7 @@
                 hideLoading();
             })
             .catch(error => {
+                console.error('Error:', error);
                 alert(`An error occurred: ${error}`);
                 hideLoading();
             });
@@ -361,12 +362,20 @@
 
         window.onload = () => {
             fetch('/favorites')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 favorites = data;
                 updateFavoritesList();
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error fetching favorites:', error);
+                alert('Failed to fetch favorites. Please try logging in again.');
+            });
 
             refreshData();
             setInterval(refreshData, 5 * 60 * 1000);

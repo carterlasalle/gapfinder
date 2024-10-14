@@ -31,8 +31,7 @@ def login():
         
         try:
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            user_data = response.user
-            user = User(user_data)
+            user = User(response.user)
             login_user(user)
             logger.info(f"User {email} logged in successfully")
             return redirect(url_for('index'))
@@ -45,6 +44,8 @@ def login():
 @auth_bp.route('/logout')
 @login_required
 def logout():
+    supabase: Client = current_app.config['SUPABASE']
+    supabase.auth.sign_out()
     logout_user()
     return redirect(url_for('auth.login'))
 

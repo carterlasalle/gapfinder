@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask_login import login_required, current_user
 from werkzeug.middleware.proxy_fix import ProxyFix
 import logging
 from cache import cache
@@ -46,6 +47,7 @@ def create_app():
     app.register_blueprint(api_bp)
 
     @app.route('/')
+    @login_required
     def index():
         return render_template('index.html')
 
