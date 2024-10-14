@@ -1,4 +1,10 @@
 import os
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    print("python-dotenv not found. Skipping .env file loading.")
+
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -8,11 +14,14 @@ import requests
 from bs4 import BeautifulSoup
 import logging
 from cache import cache
-from models import db, User, init_db, migrate
+from models import db, User, migrate
 from auth import auth_bp, login_manager
 from api import api_bp
 from werkzeug.security import generate_password_hash
 from flask_migrate import Migrate
+
+# Load environment variables
+load_dotenv()
 
 def create_app():
     app = Flask(__name__)
@@ -20,8 +29,17 @@ def create_app():
 
     # Configuration
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fallback_secret_key')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('POSTGRES_URL')
+    
+    # Modify the database URI to use 'postgresql' instead of 'postgres'
+    db_uri = os.environ.get('POSTGRES_URL_NON_POOLING')
+    if db_uri and db_uri.startswith('postgres://'):
+        db_uri = db_uri.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+    
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    # Print the database URI for debugging
+    print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
 
     # Initialize extensions
     db.init_app(app)

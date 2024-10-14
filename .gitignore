@@ -19,6 +19,9 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+__pycache__/
+.pyc
+
 
 # Virtual Environment
 venv/
@@ -85,3 +88,4 @@ npm-debug.log
 *.tmp
 *.temp
 .vercel
+.env*.local
