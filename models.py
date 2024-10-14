@@ -9,10 +9,21 @@ class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256))  # Increased from 128 to 256
+    password_hash = db.Column(db.String(256))
+    favorites = db.relationship('Favorite', backref='user', lazy='dynamic')
 
     def __repr__(self):
         return f'<User {self.username}>'
+
+class Favorite(db.Model):
+    __tablename__ = 'favorites'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    player_name = db.Column(db.String(128), nullable=False)
+    section = db.Column(db.String(64), nullable=False)
+
+    def __repr__(self):
+        return f'<Favorite {self.player_name} ({self.section})>'
 
 def init_db(app):
     db.init_app(app)

@@ -39,6 +39,21 @@
         .favorite {
             color: gold;
             cursor: pointer;
+            margin-right: 5px;
+        }
+        .delete-favorite {
+            color: red;
+            cursor: pointer;
+        }
+        #favorites {
+            margin-bottom: 20px;
+        }
+        .favorite-item {
+            display: inline-block;
+            margin-right: 10px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
         }
         #last_change_times {
             margin-top: 10px;
@@ -90,7 +105,7 @@
         let sortOrder = {column: 6, ascending: false};
         let lastRefreshTime = new Date();
         let gapMode = 'min_sell';
-        let favorites = new Set();
+        let favorites = [];
         let lastChangeTimes = {
             '204': null, // Hunter
             '200': null, // Shadow
@@ -120,27 +135,63 @@
             return Math.floor(revenue - buyPrice);
         }
 
-        function toggleFavorite(playerName) {
-            if (favorites.has(playerName)) {
-                favorites.delete(playerName);
-            } else {
-                favorites.add(playerName);
+        function toggleFavorite(playerName, section) {
+            const existingFavorite = favorites.find(f => f.player_name === playerName && f.section === section);
+            if (existingFavorite) {
+                return; // Do nothing if already favorited
             }
-            localStorage.setItem('favorites', JSON.stringify(Array.from(favorites)));
-            applySearch();
-            updateFavoritesList();
+            
+            fetch('/favorites', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ player_name: playerName, section: section })
+            })
+            .then(response => response.json())
+            .then(data => {
+                favorites.push(data);
+                updateFavoritesList();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function deleteFavorite(id) {
+            fetch(`/favorites?id=${id}`, { method: 'DELETE' })
+            .then(() => {
+                favorites = favorites.filter(f => f.id !== id);
+                updateFavoritesList();
+            })
+            .catch(error => console.error('Error:', error));
         }
 
         function updateFavoritesList() {
             const favoritesDiv = document.getElementById('favorites');
             favoritesDiv.innerHTML = '<h3>Favorites:</h3>';
-            favorites.forEach(player => {
-                const playerSpan = document.createElement('span');
-                playerSpan.textContent = player + ' ';
-                playerSpan.onclick = () => toggleFavorite(player);
-                playerSpan.style.cursor = 'pointer';
-                favoritesDiv.appendChild(playerSpan);
+            favorites.forEach(favorite => {
+                const favoriteItem = document.createElement('span');
+                favoriteItem.className = 'favorite-item';
+                favoriteItem.innerHTML = `
+                    <span onclick="selectFavorite('${favorite.player_name}', '${favorite.section}')">${favorite.player_name} (${favorite.section})</span>
+                    <span class="delete-favorite" onclick="deleteFavorite(${favorite.id})">🗑️</span>
+                `;
+                favoritesDiv.appendChild(favoriteItem);
             });
+        }
+
+        function selectFavorite(playerName, section) {
+            document.getElementById('url_select').value = getSectionValue(section);
+            document.getElementById('search').value = playerName;
+            refreshData();
+        }
+
+        function getSectionValue(section) {
+            switch (section.toLowerCase()) {
+                case 'hunter': return '204';
+                case 'shadow': return '200';
+                case 'anchor': return '202';
+                default: return '204';
+            }
         }
 
         function populateTable(data) {
@@ -169,6 +220,7 @@
             const avgPriceMin = parseFloat(document.getElementById('avg_price_min').value) || -Infinity;
             const avgPriceMax = parseFloat(document.getElementById('avg_price_max').value) || Infinity;
             const taxRate = parseFloat(document.getElementById('tax_rate').value) || 5;
+            const article_number = document.getElementById('url_select').value;
 
             let filteredData = currentData.filter(row => {
                 const currentPrice = row[3];
@@ -196,17 +248,26 @@
                 profitTd.textContent = profit;
                 tr.appendChild(profitTd);
 
-                // Add favorite column
+                // Update favorite column
                 const favoriteTd = document.createElement('td');
                 const favoriteSpan = document.createElement('span');
-                favoriteSpan.textContent = favorites.has(row[0]) ? '★' : '☆';
+                favoriteSpan.textContent = '☆';
                 favoriteSpan.className = 'favorite';
-                favoriteSpan.onclick = () => toggleFavorite(row[0]);
+                favoriteSpan.onclick = () => toggleFavorite(row[0], getSectionName(article_number));
                 favoriteTd.appendChild(favoriteSpan);
                 tr.appendChild(favoriteTd);
 
                 table.appendChild(tr);
             });
+        }
+
+        function getSectionName(articleNumber) {
+            switch (articleNumber) {
+                case '204': return 'Hunter';
+                case '200': return 'Shadow';
+                case '202': return 'Anchor';
+                default: return 'Unknown';
+            }
         }
 
         function sortTable(columnIndex) {
@@ -290,8 +351,14 @@
         }
 
         window.onload = () => {
-            favorites = new Set(JSON.parse(localStorage.getItem('favorites') || '[]'));
-            updateFavoritesList();
+            fetch('/favorites')
+            .then(response => response.json())
+            .then(data => {
+                favorites = data;
+                updateFavoritesList();
+            })
+            .catch(error => console.error('Error:', error));
+
             refreshData();
             setInterval(refreshData, 5 * 60 * 1000);
             setInterval(() => {
