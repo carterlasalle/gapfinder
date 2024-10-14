@@ -1,10 +1,7 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
-from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
-from models import User, Favorite, db
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, current_app
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user, UserMixin
 import logging
-from supabase import create_client, Client
-import os
+from supabase import Client
 
 logger = logging.getLogger(__name__)
 
@@ -12,63 +9,69 @@ auth_bp = Blueprint('auth', __name__)
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 
-# Debug logging
-supabase_url = os.environ.get('SUPABASE_URL')
-supabase_key = os.environ.get('SUPABASE_KEY')
-logger.info(f"SUPABASE_URL: {supabase_url}")
-logger.info(f"SUPABASE_KEY: {'*' * len(supabase_key) if supabase_key else 'Not set'}")
-
-if not supabase_url or not supabase_key:
-    logger.error("SUPABASE_URL or SUPABASE_KEY is not set")
-    raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in environment variables")
-
-supabase: Client = create_client(supabase_url, supabase_key)
+class User(UserMixin):
+    def __init__(self, user_data):
+        self.id = user_data['id']
+        self.email = user_data['email']
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    supabase: Client = current_app.config['SUPABASE']
+    response = supabase.table('users').select('*').eq('id', user_id).execute()
+    if response.data:
+        return User(response.data[0])
+    return None
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
+        email = request.form.get('email')
         password = request.form.get('password')
-        user = User.query.filter_by(username=username).first()
-        logger.info(f"Login attempt for user: {username}")
-        if user and check_password_hash(user.password_hash, password):
+        supabase: Client = current_app.config['SUPABASE']
+        
+        try:
+            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            user_data = response.user
+            user = User(user_data)
             login_user(user)
-            logger.info(f"User {username} logged in successfully")
-            next_page = request.args.get('next')
-            return redirect(next_page or url_for('index'))
-        logger.warning(f"Failed login attempt for user: {username}")
-        flash('Invalid username or password')
+            logger.info(f"User {email} logged in successfully")
+            return redirect(url_for('index'))
+        except Exception as e:
+            logger.warning(f"Failed login attempt for user: {email}")
+            flash('Invalid email or password')
+    
     return render_template('login.html')
 
 @auth_bp.route('/logout')
 @login_required
 def logout():
+    supabase: Client = current_app.config['SUPABASE']
+    supabase.auth.sign_out()
     logout_user()
     return redirect(url_for('auth.login'))
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form.get('username')
+        email = request.form.get('email')
         password = request.form.get('password')
-        user = User.query.filter_by(username=username).first()
-        if user:
-            flash('Username already exists')
-            return redirect(url_for('auth.register'))
-        new_user = User(username=username, password_hash=generate_password_hash(password))
-        db.session.add(new_user)
-        db.session.commit()
-        logger.info(f"New user registered: {username}")
-        return redirect(url_for('auth.login'))
+        supabase: Client = current_app.config['SUPABASE']
+        
+        try:
+            response = supabase.auth.sign_up({"email": email, "password": password})
+            logger.info(f"New user registered: {email}")
+            flash('Registration successful. Please log in.')
+            return redirect(url_for('auth.login'))
+        except Exception as e:
+            flash('Registration failed. Please try again.')
+    
     return render_template('register.html')
 
 @auth_bp.route('/favorites', methods=['GET', 'POST', 'DELETE'])
 @login_required
 def favorites():
+    supabase: Client = current_app.config['SUPABASE']
+    
     if request.method == 'GET':
         response = supabase.table('favorites').select('*').eq('user_id', current_user.id).execute()
         return jsonify(response.data)
