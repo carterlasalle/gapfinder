@@ -37,9 +37,7 @@ def login():
 
 @auth_bp.route('/logout')
 def logout():
-    supabase: Client = current_app.config['SUPABASE']
-    supabase.auth.sign_out()
-    session.clear()
+    session.pop('access_token', None)
     return redirect(url_for('auth.login'))
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -62,17 +60,19 @@ def register():
 @login_required
 def favorites():
     supabase: Client = current_app.config['SUPABASE']
+    user = supabase.auth.get_user(session['access_token'])
     
     if request.method == 'GET':
-        response = supabase.table('favorites').select('*').execute()
+        response = supabase.table('favorites').select('*').eq('user_id', user.id).execute()
         return jsonify(response.data)
     elif request.method == 'POST':
         data = request.json
+        data['user_id'] = user.id
         response = supabase.table('favorites').insert(data).execute()
         return jsonify(response.data[0]), 201
     elif request.method == 'DELETE':
         favorite_id = request.args.get('id')
-        response = supabase.table('favorites').delete().eq('id', favorite_id).execute()
+        response = supabase.table('favorites').delete().eq('id', favorite_id).eq('user_id', user.id).execute()
         if response.data:
             return '', 204
         return jsonify({'error': 'Favorite not found'}), 404
