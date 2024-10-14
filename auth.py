@@ -57,14 +57,40 @@ def register():
         supabase: Client = current_app.config['SUPABASE']
         
         try:
-            response = supabase.auth.sign_up({"email": email, "password": password})
+            response = supabase.auth.sign_up({
+                "email": email, 
+                "password": password,
+                "options": {
+                    "data": {
+                        "email": email
+                    }
+                }
+            })
             logger.info(f"New user registered: {email}")
-            flash('Registration successful. Please log in.')
+            flash('Registration successful. Please check your email to verify your account.')
             return redirect(url_for('auth.login'))
         except Exception as e:
             flash('Registration failed. Please try again.')
     
     return render_template('register.html')
+
+@auth_bp.route('/auth/callback')
+def auth_callback():
+    supabase: Client = current_app.config['SUPABASE']
+    code = request.args.get('code')
+    
+    if code:
+        try:
+            response = supabase.auth.exchange_code_for_session(code)
+            user = User(response.user)
+            login_user(user)
+            flash('Email verified successfully. You are now logged in.')
+            return redirect(url_for('index'))
+        except Exception as e:
+            logger.error(f"Error in auth callback: {str(e)}")
+            flash('Error verifying email. Please try again or contact support.')
+    
+    return redirect(url_for('auth.login'))
 
 @auth_bp.route('/favorites', methods=['GET', 'POST', 'DELETE'])
 @login_required
