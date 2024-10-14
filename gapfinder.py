@@ -47,13 +47,17 @@ def create_app():
 
     @app.route('/')
     def index():
+        if 'access_token' not in session:
+            return redirect(url_for('auth.login'))
+        
         user = None
-        if 'access_token' in session:
-            try:
-                user = app.config['SUPABASE'].auth.get_user(session['access_token'])
-            except Exception:
-                # Handle token expiration or other errors
-                session.pop('access_token', None)
+        try:
+            user = app.config['SUPABASE'].auth.get_user(session['access_token'])
+        except Exception:
+            # Handle token expiration or other errors
+            session.pop('access_token', None)
+            return redirect(url_for('auth.login'))
+        
         return render_template('index.html', user=user)
 
     @app.route('/test_db')

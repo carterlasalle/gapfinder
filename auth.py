@@ -22,6 +22,9 @@ def login_required(f):
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    if 'access_token' in session:
+        return redirect(url_for('index'))
+
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
