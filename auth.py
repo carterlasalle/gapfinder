@@ -36,8 +36,8 @@ def login():
             logger.info(f"User {email} logged in successfully")
             return redirect(url_for('index'))
         except Exception as e:
-            logger.warning(f"Failed login attempt for user: {email}")
-            flash('Invalid email or password')
+            logger.error(f"Login error for user {email}: {str(e)}")
+            flash(f'Login failed: {str(e)}')
     
     return render_template('login.html')
 

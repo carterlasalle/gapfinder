@@ -28,8 +28,8 @@ def create_app():
     supabase_key = os.environ.get('SUPABASE_KEY') or os.environ.get('NEXT_PUBLIC_SUPABASE_ANON_KEY')
     
     # Debug logging
-    logger.info(f"SUPABASE_URL: {supabase_url}")
-    logger.info(f"SUPABASE_KEY: {'*' * len(supabase_key) if supabase_key else 'Not set'}")
+    print(f"SUPABASE_URL: {supabase_url}")
+    print(f"SUPABASE_KEY: {'*' * (len(supabase_key) - 4) + supabase_key[-4:]}")
     
     if not supabase_url or not supabase_key:
         logger.error("SUPABASE_URL or SUPABASE_KEY is not set")
