@@ -60,3 +60,6 @@ if not app.debug:
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)
+
+# Add this at the end of gapfinder.py
+app = create_app()

@@ -11,5 +11,8 @@
       "src": "/(.*)",
       "dest": "gapfinder.py"
     }
-  ]
+  ],
+  "env": {
+    "PYTHONUNBUFFERED": "1"
+  }
 }
