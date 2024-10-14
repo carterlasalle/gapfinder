@@ -19,6 +19,10 @@ from supabase import create_client, Client
 # Load environment variables
 load_dotenv()
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 def create_app():
     app = Flask(__name__)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
@@ -32,14 +36,16 @@ def create_app():
     supabase_url = os.environ.get('SUPABASE_URL')
     supabase_key = os.environ.get('SUPABASE_KEY')
     
+    # Debug logging
+    logger.info(f"SUPABASE_URL: {supabase_url}")
+    logger.info(f"SUPABASE_KEY: {'*' * len(supabase_key) if supabase_key else 'Not set'}")
+    logger.info(f"DATABASE_URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    
     if not supabase_url or not supabase_key:
+        logger.error("SUPABASE_URL or SUPABASE_KEY is not set")
         raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in environment variables")
     
     supabase: Client = create_client(supabase_url, supabase_key)
-
-    # Print the database URI for debugging
-    print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
-    print(f"Supabase URL: {supabase_url}")
 
     # Initialize extensions
     db.init_app(app)
@@ -64,11 +70,6 @@ def create_app():
             return f"Database connection successful. Number of users: {len(users)}"
         except Exception as e:
             return f"Database connection failed: {str(e)}"
-
-    # Logging configuration
-    if not app.debug:
-        app.logger.setLevel(logging.INFO)
-        app.logger.info('Gapfinder startup')
 
     return app
 

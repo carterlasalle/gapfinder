@@ -12,7 +12,17 @@ auth_bp = Blueprint('auth', __name__)
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 
-supabase: Client = create_client(os.environ.get('SUPABASE_URL'), os.environ.get('SUPABASE_KEY'))
+# Debug logging
+supabase_url = os.environ.get('SUPABASE_URL')
+supabase_key = os.environ.get('SUPABASE_KEY')
+logger.info(f"SUPABASE_URL: {supabase_url}")
+logger.info(f"SUPABASE_KEY: {'*' * len(supabase_key) if supabase_key else 'Not set'}")
+
+if not supabase_url or not supabase_key:
+    logger.error("SUPABASE_URL or SUPABASE_KEY is not set")
+    raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in environment variables")
+
+supabase: Client = create_client(supabase_url, supabase_key)
 
 @login_manager.user_loader
 def load_user(user_id):
