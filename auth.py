@@ -81,10 +81,22 @@ def favorites():
             data = request.json
             if not data:
                 return jsonify({'error': 'Invalid JSON data'}), 400
-            data['user_id'] = user.user.id  # user.user.id is already a UUID
-            response = supabase.table('favorites').insert(data).execute()
-            if 'error' in response:
-                return jsonify({'error': response['error']['message']}), 500
+            
+            # Ensure user_id is a UUID
+            user_id = uuid.UUID(user.user.id)
+            
+            # Create the data to be inserted
+            favorite_data = {
+                'user_id': str(user_id),  # Convert UUID to string
+                'player_name': data.get('player_name'),
+                'section': data.get('section')
+            }
+            
+            response = supabase.table('favorites').insert(favorite_data).execute()
+            
+            if hasattr(response, 'error') and response.error:
+                return jsonify({'error': response.error.message}), 500
+            
             return jsonify(response.data[0]), 201
         except Exception as e:
             current_app.logger.error(f"Error in POST /favorites: {str(e)}")
@@ -92,7 +104,8 @@ def favorites():
     elif request.method == 'DELETE':
         try:
             favorite_id = request.args.get('id')
-            response = supabase.table('favorites').delete().eq('id', favorite_id).eq('user_id', user.user.id).execute()
+            user_id = uuid.UUID(user.user.id)
+            response = supabase.table('favorites').delete().eq('id', favorite_id).eq('user_id', str(user_id)).execute()
             if response.data:
                 return jsonify({'message': 'Favorite deleted successfully'}), 200
             return jsonify({'error': 'Favorite not found or not authorized to delete'}), 404
