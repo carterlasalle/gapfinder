@@ -47,11 +47,10 @@ def create_app():
 
     @app.route('/')
     def index():
-        supabase: Client = current_app.config['SUPABASE']
         user = None
         if 'access_token' in session:
             try:
-                user = supabase.auth.get_user(session['access_token'])
+                user = app.config['SUPABASE'].auth.get_user(session['access_token'])
             except Exception:
                 # Handle token expiration or other errors
                 session.pop('access_token', None)
@@ -60,7 +59,7 @@ def create_app():
     @app.route('/test_db')
     def test_db():
         try:
-            response = supabase.table('favorites').select('*').execute()
+            response = app.config['SUPABASE'].table('favorites').select('*').execute()
             return f"Database connection successful. Number of favorites: {len(response.data)}"
         except Exception as e:
             return f"Database connection failed: {str(e)}"
