@@ -47,7 +47,15 @@ def create_app():
 
     @app.route('/')
     def index():
-        return render_template('index.html')
+        supabase: Client = current_app.config['SUPABASE']
+        user = None
+        if 'access_token' in session:
+            try:
+                user = supabase.auth.get_user(session['access_token'])
+            except Exception:
+                # Handle token expiration or other errors
+                session.pop('access_token', None)
+        return render_template('index.html', user=user)
 
     @app.route('/test_db')
     def test_db():

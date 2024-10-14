@@ -13,8 +13,9 @@ def login_required(f):
         try:
             user = supabase.auth.get_user(session['access_token'])
             if not user:
-                return redirect(url_for('auth.login'))
+                raise ValueError("Invalid user")
         except Exception:
+            session.pop('access_token', None)
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -36,7 +37,13 @@ def login():
     return render_template('login.html')
 
 @auth_bp.route('/logout')
+@login_required
 def logout():
+    supabase: Client = current_app.config['SUPABASE']
+    try:
+        supabase.auth.sign_out(session['access_token'])
+    except Exception:
+        pass  # If sign out fails, we'll still remove the token from the session
     session.pop('access_token', None)
     return redirect(url_for('auth.login'))
 
@@ -63,16 +70,16 @@ def favorites():
     user = supabase.auth.get_user(session['access_token'])
     
     if request.method == 'GET':
-        response = supabase.table('favorites').select('*').eq('user_id', user.id).execute()
+        response = supabase.table('favorites').select('*').eq('user_id', user.user.id).execute()
         return jsonify(response.data)
     elif request.method == 'POST':
         data = request.json
-        data['user_id'] = user.id
+        data['user_id'] = user.user.id
         response = supabase.table('favorites').insert(data).execute()
         return jsonify(response.data[0]), 201
     elif request.method == 'DELETE':
         favorite_id = request.args.get('id')
-        response = supabase.table('favorites').delete().eq('id', favorite_id).eq('user_id', user.id).execute()
+        response = supabase.table('favorites').delete().eq('id', favorite_id).eq('user_id', user.user.id).execute()
         if response.data:
             return '', 204
         return jsonify({'error': 'Favorite not found'}), 404

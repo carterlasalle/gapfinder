@@ -62,10 +62,10 @@
     </style>
 </head>
 <body>
-    <!-- Add this near the top of the body -->
+    <!-- Updated user authentication section -->
     <div style="text-align: right; margin-bottom: 20px;">
-        {% if current_user.is_authenticated %}
-            <span>Logged in as: {{ current_user.email }}</span>
+        {% if user %}
+            <span>Logged in as: {{ user.user.email }}</span>
             <a href="{{ url_for('auth.logout') }}" style="margin-left: 10px;">Logout</a>
         {% else %}
             <a href="{{ url_for('auth.login') }}">Login</a>
@@ -325,6 +325,13 @@
             lastChangeTimesDiv.innerHTML = html;
         }
 
+        // Update the fetch calls to include the access token
+        function fetchWithAuth(url, options = {}) {
+            const headers = new Headers(options.headers || {});
+            headers.append('Authorization', `Bearer ${localStorage.getItem('access_token')}`);
+            return fetch(url, { ...options, headers });
+        }
+
         function refreshData() {
             showLoading();
             const article_number = document.getElementById('url_select').value;
@@ -335,7 +342,7 @@
             formData.append('show_all', show_all);
             formData.append('gap_mode', gapMode);
             formData.append('use_avg', use_avg);
-            fetch('/refresh', {
+            fetchWithAuth('/refresh', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -361,7 +368,7 @@
         }
 
         window.onload = () => {
-            fetch('/favorites')
+            fetchWithAuth('/favorites')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
