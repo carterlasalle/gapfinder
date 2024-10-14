@@ -76,13 +76,21 @@ def favorites():
         response = supabase.table('favorites').select('*').eq('user_id', user.user.id).execute()
         return jsonify(response.data)
     elif request.method == 'POST':
-        data = request.json
-        data['user_id'] = user.user.id
-        response = supabase.table('favorites').insert(data).execute()
-        return jsonify(response.data[0]), 201
+        try:
+            data = request.json
+            if not data:
+                return jsonify({'error': 'Invalid JSON data'}), 400
+            data['user_id'] = user.user.id
+            response = supabase.table('favorites').insert(data).execute()
+            return jsonify(response.data[0]), 201
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
     elif request.method == 'DELETE':
-        favorite_id = request.args.get('id')
-        response = supabase.table('favorites').delete().eq('id', favorite_id).eq('user_id', user.user.id).execute()
-        if response.data:
-            return '', 204
-        return jsonify({'error': 'Favorite not found'}), 404
+        try:
+            favorite_id = request.args.get('id')
+            response = supabase.table('favorites').delete().eq('id', favorite_id).eq('user_id', user.user.id).execute()
+            if response.data:
+                return jsonify({'message': 'Favorite deleted successfully'}), 200
+            return jsonify({'error': 'Favorite not found'}), 404
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500

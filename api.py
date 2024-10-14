@@ -34,7 +34,11 @@ def refresh():
         soup = BeautifulSoup(html_content, 'html.parser')
         
         div = soup.find('div', {'class': 'main'})
+        if not div:
+            return jsonify({'error': 'Unable to find main div'}), 500
         table = div.find('table', {'id': 'SGSR-table-1'})
+        if not table:
+            return jsonify({'error': 'Unable to find table'}), 500
         thead = table.find('thead')
         header_row = thead.find('tr') 
         rows = table.find_all('tr')[1:]
@@ -44,7 +48,7 @@ def refresh():
         return jsonify({'data': data, 'error': None})
     
     except Exception as e:
-        return jsonify({'data': None, 'error': str(e)}), 500
+        return jsonify({'error': str(e)}), 500
 
 def process_data(rows, show_all, gap_mode, use_avg):
     gaps = []
