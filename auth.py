@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, current_app, session
 from functools import wraps
 from supabase import Client
+import uuid
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -80,24 +81,21 @@ def favorites():
             data = request.json
             if not data:
                 return jsonify({'error': 'Invalid JSON data'}), 400
-            data['user_id'] = str(user.user.id)  # Convert user_id to string
+            data['user_id'] = user.user.id  # user.user.id is already a UUID
             response = supabase.table('favorites').insert(data).execute()
             if 'error' in response:
                 return jsonify({'error': response['error']['message']}), 500
             return jsonify(response.data[0]), 201
         except Exception as e:
+            current_app.logger.error(f"Error in POST /favorites: {str(e)}")
             return jsonify({'error': str(e)}), 500
     elif request.method == 'DELETE':
         try:
             favorite_id = request.args.get('id')
-            # First, check if the favorite exists and belongs to the user
-            check_response = supabase.table('favorites').select('id').eq('id', favorite_id).eq('user_id', str(user.user.id)).execute()
-            if not check_response.data:
-                return jsonify({'error': 'Favorite not found'}), 404
-            
-            response = supabase.table('favorites').delete().eq('id', favorite_id).eq('user_id', str(user.user.id)).execute()
+            response = supabase.table('favorites').delete().eq('id', favorite_id).eq('user_id', user.user.id).execute()
             if response.data:
                 return jsonify({'message': 'Favorite deleted successfully'}), 200
-            return jsonify({'error': 'Failed to delete favorite'}), 500
+            return jsonify({'error': 'Favorite not found or not authorized to delete'}), 404
         except Exception as e:
+            current_app.logger.error(f"Error in DELETE /favorites: {str(e)}")
             return jsonify({'error': str(e)}), 500

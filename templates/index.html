@@ -157,12 +157,11 @@
                 if (!response.ok) {
                     throw new Error(data.error || 'Failed to toggle favorite');
                 }
-                // Handle successful response
                 console.log('Favorite added successfully:', data);
-                // Update UI to reflect the new favorite
+                await refreshFavorites();
             } catch (error) {
                 console.error('Error toggling favorite:', error);
-                // Handle error (e.g., show an error message to the user)
+                alert(`Failed to toggle favorite: ${error.message}`);
             }
         }
 
@@ -175,12 +174,26 @@
                 if (!response.ok) {
                     throw new Error(data.error || 'Failed to delete favorite');
                 }
-                // Handle successful response
                 console.log('Favorite deleted successfully');
-                // Update UI to remove the deleted favorite
+                await refreshFavorites();
             } catch (error) {
                 console.error('Error deleting favorite:', error);
-                // Handle error (e.g., show an error message to the user)
+                alert(`Failed to delete favorite: ${error.message}`);
+            }
+        }
+
+        async function refreshFavorites() {
+            try {
+                const response = await fetch('/favorites');
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to fetch favorites');
+                }
+                favorites = data;
+                updateFavoritesList();
+            } catch (error) {
+                console.error('Error fetching favorites:', error);
+                alert(`Failed to fetch favorites: ${error.message}`);
             }
         }
 
