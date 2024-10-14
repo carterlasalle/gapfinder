@@ -1,10 +1,5 @@
 import os
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    print("python-dotenv not found. Skipping .env file loading.")
-
+from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -19,6 +14,7 @@ from auth import auth_bp, login_manager
 from api import api_bp
 from werkzeug.security import generate_password_hash
 from flask_migrate import Migrate
+from supabase import create_client, Client
 
 # Load environment variables
 load_dotenv()
@@ -28,15 +24,15 @@ def create_app():
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     # Configuration
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fallback_secret_key')
-    
-    # Modify the database URI to use 'postgresql' instead of 'postgres'
-    db_uri = os.environ.get('POSTGRES_URL_NON_POOLING')
-    if db_uri and db_uri.startswith('postgres://'):
-        db_uri = db_uri.replace('postgres://', 'postgresql://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
-    
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    # Initialize Supabase client
+    supabase: Client = create_client(
+        os.environ.get('SUPABASE_URL'),
+        os.environ.get('SUPABASE_KEY')
+    )
 
     # Print the database URI for debugging
     print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")

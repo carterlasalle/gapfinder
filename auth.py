@@ -3,12 +3,16 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import User, Favorite, db
 import logging
+from supabase import create_client, Client
+import os
 
 logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint('auth', __name__)
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
+
+supabase: Client = create_client(os.environ.get('SUPABASE_URL'), os.environ.get('SUPABASE_KEY'))
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -56,19 +60,19 @@ def register():
 @login_required
 def favorites():
     if request.method == 'GET':
-        user_favorites = Favorite.query.filter_by(user_id=current_user.id).all()
-        return jsonify([{'id': f.id, 'player_name': f.player_name, 'section': f.section} for f in user_favorites])
+        response = supabase.table('favorites').select('*').eq('user_id', current_user.id).execute()
+        return jsonify(response.data)
     elif request.method == 'POST':
         data = request.json
-        new_favorite = Favorite(user_id=current_user.id, player_name=data['player_name'], section=data['section'])
-        db.session.add(new_favorite)
-        db.session.commit()
-        return jsonify({'id': new_favorite.id, 'player_name': new_favorite.player_name, 'section': new_favorite.section}), 201
+        response = supabase.table('favorites').insert({
+            'user_id': current_user.id,
+            'player_name': data['player_name'],
+            'section': data['section']
+        }).execute()
+        return jsonify(response.data[0]), 201
     elif request.method == 'DELETE':
         favorite_id = request.args.get('id')
-        favorite = Favorite.query.filter_by(id=favorite_id, user_id=current_user.id).first()
-        if favorite:
-            db.session.delete(favorite)
-            db.session.commit()
+        response = supabase.table('favorites').delete().eq('id', favorite_id).eq('user_id', current_user.id).execute()
+        if response.data:
             return '', 204
         return jsonify({'error': 'Favorite not found'}), 404
