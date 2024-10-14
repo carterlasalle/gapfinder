@@ -1,10 +1,10 @@
 flask
-requests
-bs4
 flask-sqlalchemy
 flask-login
 flask-bcrypt
-gunicorn
-psycopg2-binary
+requests
+beautifulsoup4
 flask-caching
 flask-migrate
+psycopg2-binary
+gunicorn
