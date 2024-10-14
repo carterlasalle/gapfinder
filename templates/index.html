@@ -62,6 +62,15 @@
     </style>
 </head>
 <body>
+    <!-- Add this near the top of the body -->
+    <div style="text-align: right; margin-bottom: 20px;">
+        {% if current_user.is_authenticated %}
+            <span>Logged in as: {{ current_user.email }}</span>
+            <a href="{{ url_for('auth.logout') }}" style="margin-left: 10px;">Logout</a>
+        {% else %}
+            <a href="{{ url_for('auth.login') }}">Login</a>
+        {% endif %}
+    </div>
     <div id="loading" style="display: none;">Loading...</div>
     <div style="margin-bottom: 20px;">
         <select id="url_select" onchange="refreshData()" style="padding: 10px;">

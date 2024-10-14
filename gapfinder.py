@@ -20,7 +20,7 @@ def create_app():
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     # Configuration
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'your-secret-key-here'  # Make sure this is set
 
     # Initialize Supabase client
     supabase_url = os.environ.get('SUPABASE_URL')
@@ -52,8 +52,8 @@ def create_app():
     @app.route('/test_db')
     def test_db():
         try:
-            response = supabase.table('users').select('*').execute()
-            return f"Database connection successful. Number of users: {len(response.data)}"
+            response = supabase.table('favorites').select('*').execute()
+            return f"Database connection successful. Number of favorites: {len(response.data)}"
         except Exception as e:
             return f"Database connection failed: {str(e)}"
 

@@ -17,9 +17,9 @@ class User(UserMixin):
 @login_manager.user_loader
 def load_user(user_id):
     supabase: Client = current_app.config['SUPABASE']
-    response = supabase.table('users').select('*').eq('id', user_id).execute()
-    if response.data:
-        return User(response.data[0])
+    response = supabase.auth.get_user(user_id)
+    if response.user:
+        return User(response.user)
     return None
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -45,8 +45,6 @@ def login():
 @auth_bp.route('/logout')
 @login_required
 def logout():
-    supabase: Client = current_app.config['SUPABASE']
-    supabase.auth.sign_out()
     logout_user()
     return redirect(url_for('auth.login'))
 
