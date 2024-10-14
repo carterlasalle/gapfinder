@@ -19,9 +19,6 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-__pycache__/
-.pyc
-
 
 # Virtual Environment
 venv/
@@ -40,6 +37,7 @@ instance/
 
 # Database
 *.db
+*.sqlite
 *.sqlite3
 
 # OS generated files
@@ -60,6 +58,7 @@ Thumbs.db
 
 # Environment variables
 .env
+.env*.local
 
 # Compiled source
 *.com
@@ -88,4 +87,11 @@ npm-debug.log
 *.tmp
 *.temp
 .vercel
-.env*.local
+.vercel/
+
+# Testing
+.pytest_cache/
+.coverage
+
+# Migrations
+migrations/versions/
