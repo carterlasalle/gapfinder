@@ -161,12 +161,27 @@
                 if (!response.ok) {
                     throw new Error(data.error || 'Failed to toggle favorite');
                 }
-                console.log('Favorite added successfully:', data);
+                console.log('Favorite toggled successfully:', data);
                 await refreshFavorites();
+                updateFavoriteUI(playerName, section, data.action === 'added');
             } catch (error) {
                 console.error('Error toggling favorite:', error);
                 alert(`Failed to toggle favorite: ${error.message}`);
             }
+        }
+
+        function updateFavoriteUI(playerName, section, isFavorite) {
+            const rows = document.querySelectorAll('#data_table tr');
+            rows.forEach(row => {
+                const nameCell = row.cells[0];
+                if (nameCell && nameCell.textContent === playerName) {
+                    const favoriteSpan = row.querySelector('.favorite');
+                    if (favoriteSpan) {
+                        favoriteSpan.textContent = isFavorite ? '★' : '☆';
+                        favoriteSpan.style.color = isFavorite ? 'gold' : 'inherit';
+                    }
+                }
+            });
         }
 
         async function deleteFavorite(favoriteId) {
@@ -287,8 +302,10 @@
                 // Update favorite column
                 const favoriteTd = document.createElement('td');
                 const favoriteSpan = document.createElement('span');
-                favoriteSpan.textContent = '☆';
+                const isFavorite = favorites.some(fav => fav.player_name === row[0] && fav.section === getSectionName(article_number));
+                favoriteSpan.textContent = isFavorite ? '★' : '☆';
                 favoriteSpan.className = 'favorite';
+                favoriteSpan.style.color = isFavorite ? 'gold' : 'inherit';
                 favoriteSpan.onclick = () => toggleFavorite(row[0], getSectionName(article_number));
                 favoriteTd.appendChild(favoriteSpan);
                 tr.appendChild(favoriteTd);
@@ -405,13 +422,13 @@
             .then(data => {
                 favorites = data;
                 updateFavoritesList();
+                refreshData(); // Move refreshData() here to ensure favorites are loaded before populating the table
             })
             .catch(error => {
                 console.error('Error fetching favorites:', error);
                 alert('Failed to fetch favorites. Please try logging in again.');
             });
 
-            refreshData();
             setInterval(refreshData, 5 * 60 * 1000);
             setInterval(() => {
                 const now = new Date();

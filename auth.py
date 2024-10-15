@@ -82,22 +82,27 @@ def favorites():
             if not data:
                 return jsonify({'error': 'Invalid JSON data'}), 400
             
-            # Ensure user_id is a UUID
             user_id = uuid.UUID(user.user.id)
+            player_name = data.get('player_name')
+            section = data.get('section')
             
-            # Create the data to be inserted
-            favorite_data = {
-                'user_id': str(user_id),  # Convert UUID to string
-                'player_name': data.get('player_name'),
-                'section': data.get('section')
-            }
+            # Check if the favorite already exists
+            existing_favorite = supabase.table('favorites').select('*').eq('user_id', str(user_id)).eq('player_name', player_name).eq('section', section).execute()
             
-            response = supabase.table('favorites').insert(favorite_data).execute()
-            
-            if hasattr(response, 'error') and response.error:
-                return jsonify({'error': response.error.message}), 500
-            
-            return jsonify(response.data[0]), 201
+            if existing_favorite.data:
+                # If it exists, remove it (unfavorite)
+                favorite_id = existing_favorite.data[0]['id']
+                response = supabase.table('favorites').delete().eq('id', favorite_id).execute()
+                return jsonify({'message': 'Favorite removed successfully', 'action': 'removed'}), 200
+            else:
+                # If it doesn't exist, add it
+                favorite_data = {
+                    'user_id': str(user_id),
+                    'player_name': player_name,
+                    'section': section
+                }
+                response = supabase.table('favorites').insert(favorite_data).execute()
+                return jsonify({'message': 'Favorite added successfully', 'action': 'added', 'data': response.data[0]}), 201
         except Exception as e:
             current_app.logger.error(f"Error in POST /favorites: {str(e)}")
             return jsonify({'error': str(e)}), 500

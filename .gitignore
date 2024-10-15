@@ -95,3 +95,5 @@ npm-debug.log
 
 # Migrations
 migrations/versions/
+
+cursorcontext.txt
