@@ -13,6 +13,7 @@ let previousData = {
   '200': null,
   '202': null
 };
+let isNewUI = true;
 
 function setGapMode(mode) {
   gapMode = mode;
@@ -131,19 +132,25 @@ function getSectionValue(section) {
 
 function populateTable(data) {
   currentData = data;
-  const arrow = sortOrder.ascending ? '↓' : '↑';
   const table = document.getElementById('data_table');
   table.innerHTML = `<tr>
-    <th onclick="sortTable(1)">Player</th>
-    <th onclick="sortTable(2)">Max Buy</th>
-    <th onclick="sortTable(3)">Min Sell</th>
-    <th onclick="sortTable(4)">Current Price</th>
-    <th onclick="sortTable(5)">Avg Price</th>
-    <th onclick="sortTable(6)">Gap ${sortOrder.column === 6 ? arrow : ''}</th>
+    <th onclick="sortTable(1)">Player${getSortArrow(1)}</th>
+    <th onclick="sortTable(2)">Max Buy${getSortArrow(2)}</th>
+    <th onclick="sortTable(3)">Min Sell${getSortArrow(3)}</th>
+    <th onclick="sortTable(4)">Current Price${getSortArrow(4)}</th>
+    <th onclick="sortTable(5)">Avg Price${getSortArrow(5)}</th>
+    <th onclick="sortTable(6)">Gap${getSortArrow(6)}</th>
     <th>Potential Profit</th>
     <th>Favorite</th>
   </tr>`;
   applySearch();
+}
+
+function getSortArrow(columnIndex) {
+  if (sortOrder.column === columnIndex) {
+    return sortOrder.ascending ? ' ↑' : ' ↓';
+  }
+  return '';
 }
 
 function applySearch() {
@@ -208,6 +215,12 @@ function getSectionName(articleNumber) {
 }
 
 function sortTable(columnIndex) {
+  if (sortOrder.column === columnIndex) {
+    sortOrder.ascending = !sortOrder.ascending;
+  } else {
+    sortOrder = {column: columnIndex, ascending: true};
+  }
+  
   currentData.sort((a, b) => {
     const valA = a[columnIndex - 1];
     const valB = b[columnIndex - 1];
@@ -225,7 +238,7 @@ function sortTable(columnIndex) {
     }
     return sortOrder.ascending ? comparison : -comparison;
   });
-  sortOrder = {column: columnIndex, ascending: !sortOrder.ascending};
+  
   populateTable(currentData);
 }
 
@@ -294,6 +307,28 @@ function refreshData() {
   });
 }
 
+// Modify the toggleUI function
+function toggleUI() {
+  isNewUI = !isNewUI;
+  document.body.classList.toggle('old-ui', !isNewUI);
+  localStorage.setItem('isNewUI', isNewUI.toString());
+  console.log('UI toggled. isNewUI:', isNewUI); // Debug log
+  applyUIStyles();
+}
+
+// Modify the applyUIStyles function
+function applyUIStyles() {
+  console.log('Applying UI styles. isNewUI:', isNewUI); // Debug log
+  const elements = document.querySelectorAll('.controls, .filters, .search, .info, table, th, tr:nth-child(even)');
+  elements.forEach(el => {
+    el.style.transition = 'all 0.3s';
+  });
+  // Force a repaint to ensure styles are applied
+  document.body.style.display = 'none';
+  document.body.offsetHeight; // Trigger a reflow
+  document.body.style.display = '';
+}
+
 window.onload = () => {
   fetchWithAuth('/favorites')
   .then(response => {
@@ -319,4 +354,25 @@ window.onload = () => {
     document.getElementById('time_since_last_refresh').textContent = `Last refreshed: ${diffInSeconds} seconds ago`;
     updateLastChangeTimesDisplay();
   }, 1000);
+
+  // Add UI toggle functionality
+  const uiSwitch = document.getElementById('ui-switch');
+  if (!uiSwitch) {
+    console.error('UI switch element not found!');
+    return;
+  }
+  
+  isNewUI = localStorage.getItem('isNewUI') !== 'false';
+  uiSwitch.checked = isNewUI;
+  document.body.classList.toggle('old-ui', !isNewUI);
+  
+  uiSwitch.addEventListener('change', () => {
+    toggleUI();
+    console.log('Switch changed. isNewUI:', isNewUI); // Debug log
+  });
+  
+  applyUIStyles();
+
+  console.log('Initial UI state. isNewUI:', isNewUI); // Debug log
+
 };

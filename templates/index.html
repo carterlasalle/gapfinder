@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <title>FIFA/FUT Trading Gaps</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -11,64 +13,88 @@
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
-  <div style="text-align: right; margin-bottom: 20px;">
-    {% if user %}
-      <span>Logged in as: {{ user.user.email }}</span>
-      <a href="{{ url_for('auth.logout') }}" style="margin-left: 10px;">Logout</a>
-    {% else %}
-      <a href="{{ url_for('auth.login') }}">Login</a>
-    {% endif %}
-  </div>
-  <main>
-    <div id="loading" style="display: none;">Loading...</div>
-    <div style="margin-bottom: 20px;">
-      <label for="url_select">Select Chemistry Style:</label>
-      <select id="url_select" onchange="refreshData()">
-        <option value="204">Hunter</option>
-        <option value="200">Shadow</option>
-        <option value="202">Anchor</option>
-      </select>
-      <label for="show_all">
-        <input type="checkbox" id="show_all" onchange="refreshData()"> Show All
-      </label>
-      <label for="use_avg">
-        <input type="checkbox" id="use_avg" onchange="refreshData()"> Use Avg Price
-      </label>
-      <label for="max_buy_filter">
-        <input type="checkbox" id="max_buy_filter" onchange="applySearch()"> Max Buy > Current Price
-      </label>
-      <button onclick="refreshData()">Refresh</button>
-      <button onclick="setGapMode('min_sell')">Gap: Min Sell - Current Price</button>
-      <button onclick="setGapMode('max_buy')">Gap: Max Buy - Current Price</button>
-      <button onclick="setGapMode('max_min_sell')">Gap: Max Buy - Min Sell</button>
+  <header>
+    <h1>FIFA/FUT Trading Gaps</h1>
+    <div class="user-info">
+      {% if user %}
+        <span>Logged in as: {{ user.user.email }}</span>
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary">Logout</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Login</a>
+      {% endif %}
+      <div class="ui-toggle">
+        <label for="ui-switch">Old UI</label>
+        <input type="checkbox" id="ui-switch">
+        <label for="ui-switch">New UI</label>
+      </div>
     </div>
-    <div>
+  </header>
+  
+  <main>
+    <div id="loading" class="loading">Loading...</div>
+    
+    <section class="controls">
+      <div class="control-group">
+        <label for="url_select">Chemistry Style:</label>
+        <select id="url_select" onchange="refreshData()">
+          <option value="204">Hunter</option>
+          <option value="200">Shadow</option>
+          <option value="202">Anchor</option>
+        </select>
+      </div>
+      
+      <div class="control-group">
+        <label><input type="checkbox" id="show_all" onchange="refreshData()"> Show All</label>
+        <label><input type="checkbox" id="use_avg" onchange="refreshData()"> Use Avg Price</label>
+        <label><input type="checkbox" id="max_buy_filter" onchange="applySearch()"> Max Buy > Current Price</label>
+      </div>
+      
+      <div class="control-group">
+        <button onclick="refreshData()" class="btn btn-primary">Refresh</button>
+        <button onclick="setGapMode('min_sell')" class="btn btn-secondary">Gap: Min Sell - Current Price</button>
+        <button onclick="setGapMode('max_buy')" class="btn btn-secondary">Gap: Max Buy - Current Price</button>
+        <button onclick="setGapMode('max_min_sell')" class="btn btn-secondary">Gap: Max Buy - Min Sell</button>
+      </div>
+    </section>
+    
+    <section class="filters">
       <div class="price-filter">
-        <label for="current_price_min">Current Price Min:</label>
+        <label for="current_price_min">Current Price:</label>
         <input type="number" id="current_price_min" placeholder="Min" oninput="applySearch()">
-        <label for="current_price_max">Current Price Max:</label>
         <input type="number" id="current_price_max" placeholder="Max" oninput="applySearch()">
       </div>
+      
       <div class="price-filter">
-        <label for="avg_price_min">Avg Price Min:</label>
+        <label for="avg_price_min">Avg Price:</label>
         <input type="number" id="avg_price_min" placeholder="Min" oninput="applySearch()">
-        <label for="avg_price_max">Avg Price Max:</label>
         <input type="number" id="avg_price_max" placeholder="Max" oninput="applySearch()">
       </div>
-    </div>
-    <div>
-      <label for="tax_rate">EA Tax Rate (%): </label>
-      <input type="number" id="tax_rate" value="5" min="0" max="100" step="0.1" onchange="applySearch()">
-    </div>
-    <div id="favorites"></div>
-    <label for="search">Search:</label>
-    <input type="text" id="search" placeholder="Search" oninput="applySearch()">
-    <div id="time_since_last_refresh"></div>
-    <div id="last_change_times"></div>
-    <table id="data_table">
-      <!-- Data will be populated here -->
-    </table>
+      
+      <div class="tax-rate">
+        <label for="tax_rate">EA Tax Rate (%):</label>
+        <input type="number" id="tax_rate" value="5" min="0" max="100" step="0.1" onchange="applySearch()">
+      </div>
+    </section>
+    
+    <section id="favorites" class="favorites"></section>
+    
+    <section class="search">
+      <label for="search">Search:</label>
+      <input type="text" id="search" placeholder="Search players" oninput="applySearch()">
+    </section>
+    
+    <section class="info">
+      <div id="time_since_last_refresh"></div>
+      <div id="last_change_times"></div>
+    </section>
+    
+    <section class="data">
+      <table id="data_table">
+        <!-- Data will be populated here -->
+      </table>
+    </section>
   </main>
+  
   <script src="{{ url_for('static', filename='js/index.js') }}"></script>
   <script>
     window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
