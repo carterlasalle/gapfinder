@@ -195,11 +195,6 @@ tr:nth-child(even) {
   transform: translateX(26px);
 }
 
-/* New UI styles */
-body {
-  /* ... (keep existing styles) ... */
-}
-
 /* Old UI styles */
 body.old-ui {
   font-family: Arial, sans-serif;
@@ -306,8 +301,4 @@ body.old-ui .info {
   margin-bottom: 10px !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-}
-
-body.old-ui {
-  background-color: yellow !important;
 }
