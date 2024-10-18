@@ -152,3 +152,142 @@ tr:nth-child(even) {
   font-style: italic;
   color: #7f8c8d;
 }
+
+/* UI toggle styles */
+.ui-toggle {
+  display: flex;
+  align-items: center;
+  margin-left: 20px;
+}
+
+.ui-toggle label {
+  margin: 0 10px;
+}
+
+#ui-switch {
+  appearance: none;
+  width: 50px;
+  height: 24px;
+  background-color: #ccc;
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+#ui-switch::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  background-color: white;
+  transition: transform 0.3s;
+}
+
+#ui-switch:checked {
+  background-color: #3498db;
+}
+
+#ui-switch:checked::before {
+  transform: translateX(26px);
+}
+
+/* Old UI styles */
+body.old-ui {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background-color: #ffffff;
+}
+
+.old-ui select, .old-ui input, .old-ui button {
+  margin-bottom: 10px;
+  padding: 5px;
+}
+
+.old-ui table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 20px;
+  box-shadow: none;
+}
+
+.old-ui th, .old-ui td {
+  border: 1px solid #ccc;
+  text-align: left;
+  padding: 10px;
+}
+
+.old-ui th {
+  background-color: #f2f2f2;
+  color: #333;
+  cursor: pointer;
+}
+
+.old-ui tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.old-ui .price-filter {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.old-ui .price-filter input {
+  width: 80px;
+}
+
+.old-ui .favorite {
+  color: gold;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
+.old-ui .delete-favorite {
+  color: red;
+  cursor: pointer;
+}
+
+.old-ui #favorites {
+  margin-bottom: 20px;
+}
+
+.old-ui .favorite-item {
+  display: inline-block;
+  margin-right: 10px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.old-ui #last_change_times {
+  margin-top: 10px;
+  font-style: italic;
+}
+
+.old-ui .controls, .old-ui .filters, .old-ui .search, .old-ui .info {
+  background-color: transparent;
+  padding: 0;
+  margin-bottom: 10px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.old-ui .control-group {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.old-ui .btn {
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background-color: #f2f2f2;
+  color: #333;
+}
+
+.old-ui .btn:hover {
+  background-color: #e6e6e6;
+}

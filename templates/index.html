@@ -22,6 +22,11 @@
       {% else %}
         <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Login</a>
       {% endif %}
+      <div class="ui-toggle">
+        <label for="ui-switch">Old UI</label>
+        <input type="checkbox" id="ui-switch">
+        <label for="ui-switch">New UI</label>
+      </div>
     </div>
   </header>
   

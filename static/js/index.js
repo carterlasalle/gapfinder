@@ -13,6 +13,7 @@ let previousData = {
   '200': null,
   '202': null
 };
+let isNewUI = true;
 
 function setGapMode(mode) {
   gapMode = mode;
@@ -306,6 +307,21 @@ function refreshData() {
   });
 }
 
+// Add this function to toggle between old and new UI
+function toggleUI() {
+  isNewUI = !isNewUI;
+  document.body.classList.toggle('old-ui', !isNewUI);
+  localStorage.setItem('isNewUI', isNewUI);
+}
+
+// Add this function to apply UI-specific styles
+function applyUIStyles() {
+  const elements = document.querySelectorAll('.controls, .filters, .search, .info, table, th, tr:nth-child(even)');
+  elements.forEach(el => {
+    el.style.transition = 'all 0.3s';
+  });
+}
+
 window.onload = () => {
   fetchWithAuth('/favorites')
   .then(response => {
@@ -331,4 +347,13 @@ window.onload = () => {
     document.getElementById('time_since_last_refresh').textContent = `Last refreshed: ${diffInSeconds} seconds ago`;
     updateLastChangeTimesDisplay();
   }, 1000);
+
+  // Add UI toggle functionality
+  const uiSwitch = document.getElementById('ui-switch');
+  isNewUI = localStorage.getItem('isNewUI') !== 'false';
+  uiSwitch.checked = isNewUI;
+  document.body.classList.toggle('old-ui', !isNewUI);
+  
+  uiSwitch.addEventListener('change', toggleUI);
+  applyUIStyles();
 };
