@@ -312,11 +312,13 @@ function toggleUI() {
   isNewUI = !isNewUI;
   document.body.classList.toggle('old-ui', !isNewUI);
   localStorage.setItem('isNewUI', isNewUI.toString());
+  console.log('UI toggled. isNewUI:', isNewUI); // Debug log
   applyUIStyles();
 }
 
-// Add this function to apply UI-specific styles
+// Modify the applyUIStyles function
 function applyUIStyles() {
+  console.log('Applying UI styles. isNewUI:', isNewUI); // Debug log
   const elements = document.querySelectorAll('.controls, .filters, .search, .info, table, th, tr:nth-child(even)');
   elements.forEach(el => {
     el.style.transition = 'all 0.3s';
@@ -355,14 +357,22 @@ window.onload = () => {
 
   // Add UI toggle functionality
   const uiSwitch = document.getElementById('ui-switch');
+  if (!uiSwitch) {
+    console.error('UI switch element not found!');
+    return;
+  }
+  
   isNewUI = localStorage.getItem('isNewUI') !== 'false';
   uiSwitch.checked = isNewUI;
   document.body.classList.toggle('old-ui', !isNewUI);
   
   uiSwitch.addEventListener('change', () => {
     toggleUI();
-    uiSwitch.checked = isNewUI;
+    console.log('Switch changed. isNewUI:', isNewUI); // Debug log
   });
+  
   applyUIStyles();
+
+  console.log('Initial UI state. isNewUI:', isNewUI); // Debug log
 
 };

@@ -195,6 +195,11 @@ tr:nth-child(even) {
   transform: translateX(26px);
 }
 
+/* New UI styles */
+body {
+  /* ... (keep existing styles) ... */
+}
+
 /* Old UI styles */
 body.old-ui {
   font-family: Arial, sans-serif;
@@ -290,4 +295,19 @@ body.old-ui {
 
 .old-ui .btn:hover {
   background-color: #e6e6e6;
+}
+
+body.old-ui .controls,
+body.old-ui .filters,
+body.old-ui .search,
+body.old-ui .info {
+  background-color: transparent !important;
+  padding: 0 !important;
+  margin-bottom: 10px !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+body.old-ui {
+  background-color: yellow !important;
 }
