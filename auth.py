@@ -29,11 +29,14 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
+        remember_me = request.form.get('rememberMe') == 'on'
         supabase: Client = current_app.config['SUPABASE']
         
         try:
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
             session['access_token'] = response.session.access_token
+            if remember_me:
+                session.permanent = True
             return redirect(url_for('index'))
         except Exception as e:
             flash(f'Login failed: {str(e)}')
@@ -66,6 +69,27 @@ def register():
             flash(f'Registration failed: {str(e)}')
     
     return render_template('register.html')
+
+@auth_bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    email = request.json.get('email')
+    supabase: Client = current_app.config['SUPABASE']
+    try:
+        supabase.auth.reset_password_email(email)
+        return jsonify({'message': 'Password reset email sent successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@auth_bp.route('/update-password', methods=['POST'])
+@login_required
+def update_password():
+    new_password = request.json.get('new_password')
+    supabase: Client = current_app.config['SUPABASE']
+    try:
+        supabase.auth.update_user({"password": new_password})
+        return jsonify({'message': 'Password updated successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
 @auth_bp.route('/favorites', methods=['GET', 'POST', 'DELETE'])
 @login_required

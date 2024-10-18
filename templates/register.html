@@ -14,13 +14,20 @@
 <body>
     <div class="container">
         <h2>Register</h2>
-        <form method="post">
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="password" name="password" placeholder="Password" required>
+        <form id="registerForm" method="post">
+            <input type="email" name="email" id="email" placeholder="Email" required>
+            <input type="password" name="password" id="password" placeholder="Password" required>
+            <input type="password" name="confirmPassword" id="confirmPassword" placeholder="Confirm Password" required>
             <button type="submit">Register</button>
         </form>
+        <div id="error-message" class="error-message"></div>
         <p>Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
+        <div class="social-login">
+            <button onclick="signUpWithGoogle()">Sign up with Google</button>
+            <!-- Add more social login buttons as needed -->
+        </div>
     </div>
+    <script src="{{ url_for('static', filename='js/register.js') }}"></script>
     <script>
       window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
     </script>
