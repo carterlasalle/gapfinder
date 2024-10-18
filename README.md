@@ -1,7 +1,7 @@
 # FIFA/FUT Trading Gaps Finder
 
 ## Description
-This web application helps FIFA/FUT players find trading opportunities by analyzing price gaps for different player cards. It provides real-time data on player prices, allowing users to make informed decisions for trading in the FIFA Ultimate Team market.
+This web application helps FIFA/FUT players find trading opportunities by analyzing price gaps for different player cards. It provides real-time data on player prices, allowing users to make informed decisions for trading in the FIFA Ultimate Team market. Thank you futtrading.co.uk !!
 
 ## Features
 - Real-time price data for FIFA/FUT player cards
