@@ -307,11 +307,12 @@ function refreshData() {
   });
 }
 
-// Add this function to toggle between old and new UI
+// Modify the toggleUI function
 function toggleUI() {
   isNewUI = !isNewUI;
   document.body.classList.toggle('old-ui', !isNewUI);
-  localStorage.setItem('isNewUI', isNewUI);
+  localStorage.setItem('isNewUI', isNewUI.toString());
+  applyUIStyles();
 }
 
 // Add this function to apply UI-specific styles
@@ -320,6 +321,10 @@ function applyUIStyles() {
   elements.forEach(el => {
     el.style.transition = 'all 0.3s';
   });
+  // Force a repaint to ensure styles are applied
+  document.body.style.display = 'none';
+  document.body.offsetHeight; // Trigger a reflow
+  document.body.style.display = '';
 }
 
 window.onload = () => {
@@ -354,6 +359,10 @@ window.onload = () => {
   uiSwitch.checked = isNewUI;
   document.body.classList.toggle('old-ui', !isNewUI);
   
-  uiSwitch.addEventListener('change', toggleUI);
+  uiSwitch.addEventListener('change', () => {
+    toggleUI();
+    uiSwitch.checked = isNewUI;
+  });
   applyUIStyles();
+
 };
