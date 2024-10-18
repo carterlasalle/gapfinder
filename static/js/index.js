@@ -131,19 +131,25 @@ function getSectionValue(section) {
 
 function populateTable(data) {
   currentData = data;
-  const arrow = sortOrder.ascending ? '↓' : '↑';
   const table = document.getElementById('data_table');
   table.innerHTML = `<tr>
-    <th onclick="sortTable(1)">Player</th>
-    <th onclick="sortTable(2)">Max Buy</th>
-    <th onclick="sortTable(3)">Min Sell</th>
-    <th onclick="sortTable(4)">Current Price</th>
-    <th onclick="sortTable(5)">Avg Price</th>
-    <th onclick="sortTable(6)">Gap ${sortOrder.column === 6 ? arrow : ''}</th>
+    <th onclick="sortTable(1)">Player${getSortArrow(1)}</th>
+    <th onclick="sortTable(2)">Max Buy${getSortArrow(2)}</th>
+    <th onclick="sortTable(3)">Min Sell${getSortArrow(3)}</th>
+    <th onclick="sortTable(4)">Current Price${getSortArrow(4)}</th>
+    <th onclick="sortTable(5)">Avg Price${getSortArrow(5)}</th>
+    <th onclick="sortTable(6)">Gap${getSortArrow(6)}</th>
     <th>Potential Profit</th>
     <th>Favorite</th>
   </tr>`;
   applySearch();
+}
+
+function getSortArrow(columnIndex) {
+  if (sortOrder.column === columnIndex) {
+    return sortOrder.ascending ? ' ↑' : ' ↓';
+  }
+  return '';
 }
 
 function applySearch() {
@@ -208,6 +214,12 @@ function getSectionName(articleNumber) {
 }
 
 function sortTable(columnIndex) {
+  if (sortOrder.column === columnIndex) {
+    sortOrder.ascending = !sortOrder.ascending;
+  } else {
+    sortOrder = {column: columnIndex, ascending: true};
+  }
+  
   currentData.sort((a, b) => {
     const valA = a[columnIndex - 1];
     const valB = b[columnIndex - 1];
@@ -225,7 +237,7 @@ function sortTable(columnIndex) {
     }
     return sortOrder.ascending ? comparison : -comparison;
   });
-  sortOrder = {column: columnIndex, ascending: !sortOrder.ascending};
+  
   populateTable(currentData);
 }
 
